@@ -9,7 +9,7 @@ const Header = () => {
             <span className="font-bold text-2xl text-primary">Expiry Manager</span>
           </div>
           <nav className="flex space-x-4">
-            <a href="/login" className="text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium transition-colors">
+            <a href="/login" className="text-slate-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium transition-colors">
               Login
             </a>
             <a href="/register" className="bg-primary text-white hover:bg-opacity-90 px-4 py-2 rounded-md text-sm font-medium transition-colors">

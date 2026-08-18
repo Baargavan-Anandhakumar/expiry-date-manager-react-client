@@ -1,7 +1,60 @@
 @import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&display=swap');
 
 @theme {
-  --color-primary: #4B9CD3;
-  --color-secondary: #007A8E;
-  --color-accent: #A9D6E5;
+  --color-primary: #4f46e5;
+  --color-secondary: #7c3aed;
+  --color-accent: #06b6d4;
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-heading: 'Outfit', system-ui, sans-serif;
+}
+
+@layer base {
+  body {
+    @apply bg-slate-50 text-slate-800 antialiased selection:bg-indigo-500/30 selection:text-indigo-900;
+    background-image: 
+      radial-gradient(circle at 15% 50%, rgba(79, 70, 229, 0.04), transparent 25%),
+      radial-gradient(circle at 85% 30%, rgba(192, 132, 252, 0.04), transparent 25%);
+    background-attachment: fixed;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-heading tracking-tight text-slate-900;
+  }
+
+  input, select, textarea {
+    @apply transition-all duration-300 bg-white border border-slate-200 text-slate-800 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 shadow-sm;
+  }
+}
+
+/* Premium Light Mode Cards */
+.premium-card {
+  @apply bg-white/70 backdrop-blur-3xl border border-white/50 shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-3xl relative overflow-hidden;
+}
+
+.premium-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.8), transparent);
+}
+
+/* Button aesthetics */
+button {
+  @apply transition-all duration-300 transform;
+}
+button:active {
+  transform: scale(0.97);
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  @apply bg-slate-200 rounded-full hover:bg-slate-300;
 }
