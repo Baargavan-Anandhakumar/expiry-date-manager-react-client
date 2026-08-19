@@ -1,7 +1,10 @@
 import axios from 'axios';
 
+const rawBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
+const baseURL = rawBaseUrl.endsWith('/') ? rawBaseUrl : `${rawBaseUrl}/`;
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5001/api',
+  baseURL,
   withCredentials: true, // Crucial for sending/receiving HttpOnly cookies
 });
 

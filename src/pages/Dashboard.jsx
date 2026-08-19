@@ -38,7 +38,7 @@ const Dashboard = () => {
       if (searchQuery) params.search = searchQuery;
       if (expireFilter) params.expiresIn = expireFilter;
       
-      const { data } = await api.get('/products', { params });
+      const { data } = await api.get('products', { params });
       setProducts(data.data);
       setPagination(data.pagination);
     } catch (err) {
@@ -65,7 +65,7 @@ const Dashboard = () => {
   const handleDelete = async (id) => {
     if (!window.confirm('Are you sure you want to delete this product?')) return;
     try {
-      await api.delete(`/products/${id}`);
+      await api.delete(`products/${id}`);
       fetchProducts(pagination.page, search, expiresIn);
     } catch (err) {
       alert('Failed to delete product');
@@ -142,9 +142,9 @@ const Dashboard = () => {
 
     try {
       if (editingProduct) {
-        await api.put(`/products/${editingProduct._id}`, payload);
+        await api.put(`products/${editingProduct._id}`, payload);
       } else {
-        await api.post('/products', payload);
+        await api.post('products', payload);
       }
       closeModal();
       fetchProducts(pagination.page, search, expiresIn);

@@ -12,7 +12,7 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const checkUser = async () => {
       try {
-        const { data } = await api.get('/auth/me');
+        const { data } = await api.get('auth/me');
         setUser(data.user);
       } catch (error) {
         setUser(null);
@@ -24,19 +24,19 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const login = async (email, password) => {
-    const { data } = await api.post('/auth/login', { email, password });
+    const { data } = await api.post('auth/login', { email, password });
     setUser(data.user);
     return data;
   };
 
   const register = async (name, email, password) => {
-    const { data } = await api.post('/auth/register', { name, email, password });
+    const { data } = await api.post('auth/register', { name, email, password });
     setUser(data.user);
     return data;
   };
 
   const logout = async () => {
-    await api.post('/auth/logout');
+    await api.post('auth/logout');
     setUser(null);
   };
 
