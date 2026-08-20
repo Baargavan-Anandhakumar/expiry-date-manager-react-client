@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { format, differenceInDays, parseISO } from 'date-fns';
 import { Package, AlertTriangle, AlertCircle, Trash2, Edit, Plus, Search, Filter, X, Barcode, Camera } from 'lucide-react';
 import { Html5QrcodeScanner } from 'html5-qrcode';
@@ -18,6 +18,7 @@ const Dashboard = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
   const [isScanning, setIsScanning] = useState(false);
+  const scannerRef = useRef(null);
   
   // Form State
   const [formData, setFormData] = useState({
@@ -99,24 +100,32 @@ const Dashboard = () => {
 
   useEffect(() => {
     if (isScanning && isModalOpen) {
-      const scanner = new Html5QrcodeScanner('reader', {
-        qrbox: { width: 250, height: 150 },
-        fps: 10,
-      });
-
-      scanner.render(
-        (decodedText) => {
-          setFormData(prev => ({ ...prev, upcCode: decodedText }));
-          setIsScanning(false);
-          scanner.clear();
-        },
-        (err) => {
-          // ignoring continuous errors
+      // Small timeout to ensure DOM is ready
+      const timeoutId = setTimeout(() => {
+        if (!scannerRef.current) {
+          scannerRef.current = new Html5QrcodeScanner('reader', {
+            qrbox: { width: 250, height: 150 },
+            fps: 10,
+          }, false);
+  
+          scannerRef.current.render(
+            (decodedText) => {
+              setFormData(prev => ({ ...prev, upcCode: decodedText }));
+              setIsScanning(false);
+            },
+            (err) => {
+              // ignoring continuous errors
+            }
+          );
         }
-      );
+      }, 100);
 
       return () => {
-        scanner.clear().catch(e => console.log('Failed to clear scanner', e));
+        clearTimeout(timeoutId);
+        if (scannerRef.current) {
+          scannerRef.current.clear().catch(e => console.log('Failed to clear scanner', e));
+          scannerRef.current = null;
+        }
       };
     }
   }, [isScanning, isModalOpen]);
@@ -171,7 +180,7 @@ const Dashboard = () => {
 
   const stats = [
     { name: 'Total Products', value: totalItems, icon: Package, color: 'text-indigo-600', bg: 'bg-indigo-50' },
-    { name: 'Expiring Soon (7 Days)', value: expiringSoonCount, icon: AlertTriangle, color: 'text-orange-600', bg: 'bg-orange-50' },
+    { name: 'Expiring Soon', value: expiringSoonCount, icon: AlertTriangle, color: 'text-orange-600', bg: 'bg-orange-50' },
     { name: 'Expired', value: expiredCount, icon: AlertCircle, color: 'text-red-600', bg: 'bg-red-50' },
   ];
 
@@ -183,32 +192,33 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="space-y-8 relative">
+    <div className="space-y-6 relative max-w-7xl mx-auto">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Dashboard</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">Dashboard</h1>
           <p className="mt-1 text-sm text-slate-500">Manage your inventory and track expiring products.</p>
         </div>
         <button 
           onClick={() => openModal()} 
-          className="flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-violet-600 text-white border-0 shadow-xl shadow-indigo-500/30 px-5 py-2.5 rounded-2xl hover:bg-indigo-700 transition-all shadow-lg shadow-blue-200 font-medium transform active:scale-95"
+          className="flex items-center justify-center w-full sm:w-auto gap-2 bg-gradient-to-r from-indigo-600 to-violet-600 text-white border-0 shadow-lg shadow-indigo-500/30 px-5 py-3 sm:py-2.5 rounded-2xl hover:bg-indigo-700 transition-all font-medium transform active:scale-95"
         >
           <Plus className="w-5 h-5" /> Add Product
         </button>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
+      {/* Stats Grid - Responsive layout */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
         {stats.map((stat) => {
           const Icon = stat.icon;
           return (
             <div key={stat.name} className="premium-card overflow-hidden hover:shadow-lg transition-all">
-              <div className="p-6 flex items-center">
-                <div className={`flex-shrink-0 p-4 rounded-3xl ${stat.bg}`}>
-                  <Icon className={`h-7 w-7 ${stat.color}`} aria-hidden="true" />
+              <div className="p-5 sm:p-6 flex items-center">
+                <div className={`flex-shrink-0 p-3 sm:p-4 rounded-2xl sm:rounded-3xl ${stat.bg}`}>
+                  <Icon className={`h-6 w-6 sm:h-7 sm:w-7 ${stat.color}`} aria-hidden="true" />
                 </div>
-                <div className="ml-5 w-0 flex-1">
-                  <dt className="text-sm font-semibold text-slate-500 truncate uppercase tracking-wider">{stat.name}</dt>
-                  <dd className="text-3xl font-bold text-slate-900 mt-1">{stat.value}</dd>
+                <div className="ml-4 sm:ml-5 w-0 flex-1">
+                  <dt className="text-xs sm:text-sm font-semibold text-slate-500 truncate uppercase tracking-wider">{stat.name}</dt>
+                  <dd className="text-2xl sm:text-3xl font-bold text-slate-900 mt-1">{stat.value}</dd>
                 </div>
               </div>
             </div>
@@ -217,15 +227,15 @@ const Dashboard = () => {
       </div>
 
       {/* Controls: Search and Filter */}
-      <div className="premium-card p-5 flex flex-col sm:flex-row justify-between gap-4">
-        <div className="relative flex-1 max-w-xl">
+      <div className="premium-card p-4 sm:p-5 flex flex-col sm:flex-row justify-between gap-4">
+        <div className="relative flex-1 w-full">
           <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
             <Search className="h-5 w-5 text-slate-400" />
           </div>
           <input
             type="text"
-            className="block w-full pl-11 pr-4 py-3 border border-slate-200 rounded-3xl leading-5 bg-slate-50 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all sm:text-sm"
-            placeholder="Search by product title or UPC code..."
+            className="block w-full pl-11 pr-4 py-3 border border-slate-200 rounded-2xl sm:rounded-3xl leading-5 bg-slate-50 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all text-sm"
+            placeholder="Search products or UPC..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -235,7 +245,7 @@ const Dashboard = () => {
           <select
             value={expiresIn}
             onChange={(e) => setExpiresIn(e.target.value)}
-            className="block w-full sm:w-64 pl-4 pr-10 py-3 text-base border border-slate-200 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white sm:text-sm rounded-3xl transition-all"
+            className="block w-full sm:w-56 pl-4 pr-10 py-3 text-sm border border-slate-200 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white rounded-2xl sm:rounded-3xl transition-all"
           >
             <option value="">All Time</option>
             <option value="1">Expiring within 1 Month</option>
@@ -245,96 +255,150 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* Products Table */}
+      {/* Products Display */}
       <div className="premium-card overflow-hidden">
-        {error && <div className="p-4 bg-red-50 text-red-600 text-center">{error}</div>}
+        {error && <div className="p-4 bg-red-50 text-red-600 text-center text-sm">{error}</div>}
         {isLoading && !products.length ? (
-          <div className="p-12 text-center text-slate-500 animate-pulse">Loading your inventory...</div>
+          <div className="p-12 text-center text-slate-500 animate-pulse text-sm">Loading your inventory...</div>
         ) : products.length === 0 ? (
-          <div className="p-16 text-center flex flex-col items-center">
+          <div className="p-10 sm:p-16 text-center flex flex-col items-center">
             <div className="bg-slate-50 p-4 rounded-full mb-4">
               <Package className="h-10 w-10 text-slate-400" />
             </div>
-            <h3 className="text-xl font-semibold text-slate-900">No products found</h3>
-            <p className="mt-2 text-slate-500 max-w-sm text-center">Your inventory looks a bit empty. Get started by adding a new product or scanning a barcode.</p>
-            <button onClick={() => openModal()} className="mt-6 text-indigo-600 font-medium hover:text-indigo-800 transition-colors">
+            <h3 className="text-lg sm:text-xl font-semibold text-slate-900">No products found</h3>
+            <p className="mt-2 text-sm text-slate-500 max-w-sm text-center">Your inventory looks a bit empty. Get started by adding a new product or scanning a barcode.</p>
+            <button onClick={() => openModal()} className="mt-6 text-indigo-600 text-sm font-medium hover:text-indigo-800 transition-colors">
               + Add your first product
             </button>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-slate-100">
-              <thead className="bg-slate-50/50">
-                <tr>
-                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Product Info</th>
-                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Price/Amount</th>
-                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Expiry Date</th>
-                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Status</th>
-                  <th className="relative px-6 py-4"><span className="sr-only">Actions</span></th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-slate-100">
-                {products.map((product) => {
-                  const status = getExpiryStatus(product.expiryDate);
-                  return (
-                    <tr key={product._id} className="hover:bg-slate-50/80 transition-colors group">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-semibold text-slate-900">{product.title}</div>
-                        <div className="text-xs text-slate-500 mt-0.5 flex items-center gap-1">
+          <>
+            {/* Desktop Table View (Hidden on mobile) */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="min-w-full divide-y divide-slate-100">
+                <thead className="bg-slate-50/50">
+                  <tr>
+                    <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Product Info</th>
+                    <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Price/Amount</th>
+                    <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Expiry Date</th>
+                    <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Status</th>
+                    <th className="relative px-6 py-4"><span className="sr-only">Actions</span></th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-slate-100">
+                  {products.map((product) => {
+                    const status = getExpiryStatus(product.expiryDate);
+                    return (
+                      <tr key={product._id} className="hover:bg-slate-50/80 transition-colors group">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm font-semibold text-slate-900">{product.title}</div>
+                          <div className="text-xs text-slate-500 mt-0.5 flex items-center gap-1">
+                            <Barcode className="w-3 h-3" /> {product.upcCode || 'No UPC'}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-700">
+                          {product.amount?.currency} {product.amount?.value?.toFixed(2)}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">
+                          {format(parseISO(product.expiryDate), 'MMM dd, yyyy')}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`px-3 py-1.5 inline-flex text-xs leading-5 font-bold rounded-full ${status.color}`}>
+                            {status.label}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                          <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button onClick={() => openModal(product)} className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-2xl transition-all" title="Edit">
+                              <Edit className="w-4 h-4" />
+                            </button>
+                            <button onClick={() => handleDelete(product._id)} className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-2xl transition-all" title="Delete">
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile Card View (Hidden on desktop) */}
+            <div className="md:hidden divide-y divide-slate-100">
+              {products.map((product) => {
+                const status = getExpiryStatus(product.expiryDate);
+                return (
+                  <div key={product._id} className="p-4 sm:p-5 hover:bg-slate-50/50 transition-colors">
+                    <div className="flex justify-between items-start mb-2">
+                      <div className="flex-1 pr-4">
+                        <h4 className="text-sm sm:text-base font-semibold text-slate-900 break-words">{product.title}</h4>
+                        <div className="text-xs text-slate-500 mt-1 flex items-center gap-1">
                           <Barcode className="w-3 h-3" /> {product.upcCode || 'No UPC'}
                         </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-700">
-                        {product.amount?.currency} {product.amount?.value?.toFixed(2)}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">
-                        {format(parseISO(product.expiryDate), 'MMM dd, yyyy')}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-3 py-1.5 inline-flex text-xs leading-5 font-bold rounded-full ${status.color}`}>
-                          {status.label}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button onClick={() => openModal(product)} className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-2xl transition-all" title="Edit">
-                            <Edit className="w-4 h-4" />
-                          </button>
-                          <button onClick={() => handleDelete(product._id)} className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-2xl transition-all" title="Delete">
-                            <Trash2 className="w-4 h-4" />
-                          </button>
+                      </div>
+                      <span className={`shrink-0 px-2.5 py-1 inline-flex text-[10px] sm:text-xs leading-5 font-bold rounded-full ${status.color}`}>
+                        {status.label}
+                      </span>
+                    </div>
+                    
+                    <div className="flex justify-between items-end mt-3">
+                      <div>
+                        <div className="text-xs text-slate-500 mb-0.5">Expires</div>
+                        <div className="text-sm font-medium text-slate-900">
+                          {format(parseISO(product.expiryDate), 'MMM dd, yyyy')}
                         </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-sm font-bold text-slate-700">
+                          {product.amount?.currency} {product.amount?.value?.toFixed(2)}
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="mt-4 flex gap-2 border-t border-slate-100 pt-3">
+                      <button 
+                        onClick={() => openModal(product)} 
+                        className="flex-1 flex items-center justify-center gap-1 py-2 text-sm font-medium text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-xl transition-colors"
+                      >
+                        <Edit className="w-4 h-4" /> Edit
+                      </button>
+                      <button 
+                        onClick={() => handleDelete(product._id)} 
+                        className="flex-1 flex items-center justify-center gap-1 py-2 text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded-xl transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4" /> Delete
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </>
         )}
         
         {/* Pagination */}
         {pagination.pages > 1 && (
-          <div className="bg-transparent px-6 py-4 flex items-center justify-between border-t border-slate-200/60">
-            <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+          <div className="bg-transparent px-4 sm:px-6 py-4 flex items-center justify-between border-t border-slate-200/60">
+            <div className="flex-1 flex items-center justify-between">
               <div>
-                <p className="text-sm text-slate-500">
-                  Showing page <span className="font-semibold text-slate-900">{pagination.page}</span> of <span className="font-semibold text-slate-900">{pagination.pages}</span>
+                <p className="text-xs sm:text-sm text-slate-500">
+                  Page <span className="font-semibold text-slate-900">{pagination.page}</span> of <span className="font-semibold text-slate-900">{pagination.pages}</span>
                 </p>
               </div>
               <div>
-                <nav className="relative z-0 inline-flex rounded-2xl shadow-lg overflow-hidden border border-slate-200" aria-label="Pagination">
+                <nav className="relative z-0 inline-flex rounded-xl sm:rounded-2xl shadow-sm overflow-hidden border border-slate-200" aria-label="Pagination">
                   <button
                     onClick={() => handlePageChange(pagination.page - 1)}
                     disabled={pagination.page === 1}
-                    className="relative inline-flex items-center px-4 py-2 border-r border-slate-200 bg-white text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50 disabled:bg-slate-50 transition-colors"
+                    className="relative inline-flex items-center px-3 sm:px-4 py-2 border-r border-slate-200 bg-white text-xs sm:text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50 disabled:bg-slate-50 transition-colors min-h-[40px]"
                   >
                     Previous
                   </button>
                   <button
                     onClick={() => handlePageChange(pagination.page + 1)}
                     disabled={pagination.page === pagination.pages}
-                    className="relative inline-flex items-center px-4 py-2 bg-white text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50 disabled:bg-slate-50 transition-colors"
+                    className="relative inline-flex items-center px-3 sm:px-4 py-2 bg-white text-xs sm:text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50 disabled:bg-slate-50 transition-colors min-h-[40px]"
                   >
                     Next
                   </button>
@@ -350,38 +414,35 @@ const Dashboard = () => {
         <div className="fixed inset-0 z-50 overflow-hidden" aria-labelledby="slide-over-title" role="dialog" aria-modal="true">
           <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity" onClick={closeModal} />
           
-          <div className="pointer-events-none fixed inset-y-0 right-0 flex max-w-full pl-10">
-            <div className="pointer-events-auto w-screen max-w-md transform transition-transform ease-in-out duration-300 translate-x-0">
-              <div className="flex h-full flex-col bg-white shadow-2xl overflow-hidden">
-                <div className="px-6 py-6 border-b border-slate-100 bg-slate-50/50 sm:px-6 shadow-lg z-10">
-                  <div className="flex items-start justify-between">
-                    <h2 className="text-xl font-bold text-slate-900" id="slide-over-title">
-                      {editingProduct ? 'Edit Product' : 'Add New Product'}
-                    </h2>
-                    <div className="ml-3 flex h-7 items-center">
-                      <button
-                        type="button"
-                        className="rounded-md bg-transparent text-slate-400 hover:text-slate-500 hover:bg-slate-200 p-1 transition-colors focus:outline-none"
-                        onClick={closeModal}
-                      >
-                        <span className="sr-only">Close panel</span>
-                        <X className="h-6 w-6" aria-hidden="true" />
-                      </button>
-                    </div>
-                  </div>
+          <div className="pointer-events-none fixed inset-y-0 right-0 flex max-w-full sm:pl-10">
+            <div className="pointer-events-auto w-screen max-w-md h-full transform transition-transform ease-in-out duration-300 translate-x-0 pt-10 sm:pt-0">
+              <div className="flex h-full flex-col bg-white shadow-2xl overflow-hidden rounded-t-2xl sm:rounded-none">
+                <div className="px-4 sm:px-6 py-4 sm:py-6 border-b border-slate-100 bg-slate-50/50 shadow-sm z-10 flex items-center justify-between">
+                  <h2 className="text-lg sm:text-xl font-bold text-slate-900" id="slide-over-title">
+                    {editingProduct ? 'Edit Product' : 'Add New Product'}
+                  </h2>
+                  <button
+                    type="button"
+                    className="rounded-full bg-transparent text-slate-400 hover:text-slate-600 hover:bg-slate-200 p-2 transition-colors focus:outline-none min-h-[44px] min-w-[44px] flex items-center justify-center"
+                    onClick={closeModal}
+                  >
+                    <span className="sr-only">Close panel</span>
+                    <X className="h-5 w-5" aria-hidden="true" />
+                  </button>
                 </div>
                 
-                <div className="relative flex-1 px-6 py-6 sm:px-6 overflow-y-auto bg-white">
+                <div className="relative flex-1 px-4 sm:px-6 py-5 sm:py-6 overflow-y-auto bg-white">
                   {formError && (
-                    <div className="mb-6 p-4 rounded-3xl bg-red-50 text-red-700 text-sm font-medium flex items-start gap-3 border border-red-100">
-                      <AlertCircle className="w-5 h-5 shrink-0 text-red-500" /> {formError}
+                    <div className="mb-5 p-3 sm:p-4 rounded-xl sm:rounded-3xl bg-red-50 text-red-700 text-xs sm:text-sm font-medium flex items-start gap-2 sm:gap-3 border border-red-100">
+                      <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 shrink-0 text-red-500 mt-0.5" /> 
+                      <span className="break-words flex-1">{formError}</span>
                     </div>
                   )}
 
-                  <form id="product-form" onSubmit={handleFormSubmit} className="space-y-6">
+                  <form id="product-form" onSubmit={handleFormSubmit} className="space-y-5 sm:space-y-6 pb-20 sm:pb-0">
                     <div>
-                      <label htmlFor="upcCode" className="block text-sm font-semibold text-slate-700 mb-1">UPC Barcode (Scan or Enter)</label>
-                      <div className="flex gap-2">
+                      <label htmlFor="upcCode" className="block text-sm font-semibold text-slate-700 mb-1.5">UPC Barcode (Scan or Enter)</label>
+                      <div className="flex flex-col sm:flex-row gap-2 sm:gap-2">
                         <div className="relative flex-1">
                           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                             <Barcode className="h-5 w-5 text-slate-400" />
@@ -393,28 +454,26 @@ const Dashboard = () => {
                             placeholder="012345678905"
                             value={formData.upcCode}
                             onChange={handleFormChange}
-                            className="block w-full pl-10 pr-4 py-3 border border-slate-200 rounded-3xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-slate-50 focus:bg-white transition-all shadow-lg"
+                            className="block w-full pl-10 pr-4 py-3 border border-slate-200 rounded-xl sm:rounded-3xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm bg-slate-50 focus:bg-white transition-all shadow-sm"
                           />
                         </div>
                         <button
                           type="button"
                           onClick={() => setIsScanning(!isScanning)}
-                          className="flex items-center gap-2 px-4 py-3 bg-indigo-50 text-indigo-700 font-semibold rounded-3xl hover:bg-indigo-100 transition-colors shadow-sm"
+                          className="flex items-center justify-center gap-2 px-4 py-3 bg-indigo-50 text-indigo-700 font-semibold rounded-xl sm:rounded-3xl hover:bg-indigo-100 transition-colors shadow-sm min-h-[44px]"
                         >
                           <Camera className="w-5 h-5" />
                           {isScanning ? 'Cancel' : 'Scan'}
                         </button>
                       </div>
-                      {isScanning && (
-                        <div className="mt-3 overflow-hidden rounded-2xl border border-slate-200 shadow-sm">
-                          <div id="reader" className="w-full"></div>
-                        </div>
-                      )}
-                      <p className="mt-1 text-xs text-slate-500 ml-1">Scan with your camera or type manually.</p>
+                      <div className={`mt-3 overflow-hidden rounded-xl sm:rounded-2xl border border-slate-200 shadow-sm ${isScanning ? 'block' : 'hidden'}`}>
+                        <div id="reader" className="w-full min-h-[200px]"></div>
+                      </div>
+                      <p className="mt-1.5 text-xs text-slate-500 ml-1">Scan with your camera or type manually.</p>
                     </div>
 
                     <div>
-                      <label htmlFor="title" className="block text-sm font-semibold text-slate-700 mb-1">Product Title</label>
+                      <label htmlFor="title" className="block text-sm font-semibold text-slate-700 mb-1.5">Product Title</label>
                       <input
                         type="text"
                         name="title"
@@ -423,13 +482,13 @@ const Dashboard = () => {
                         placeholder="e.g. Organic Milk"
                         value={formData.title}
                         onChange={handleFormChange}
-                        className="block w-full px-4 py-3 border border-slate-200 rounded-3xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-slate-50 focus:bg-white transition-all shadow-lg"
+                        className="block w-full px-4 py-3 border border-slate-200 rounded-xl sm:rounded-3xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm bg-slate-50 focus:bg-white transition-all shadow-sm"
                       />
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-4">
                       <div>
-                        <label htmlFor="amountValue" className="block text-sm font-semibold text-slate-700 mb-1">Price / Amount</label>
+                        <label htmlFor="amountValue" className="block text-sm font-semibold text-slate-700 mb-1.5">Price / Amount</label>
                         <div className="relative">
                            <span className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-500 font-medium">
                              {formData.amountCurrency === 'USD' ? '$' : formData.amountCurrency === 'EUR' ? '€' : formData.amountCurrency === 'GBP' ? '£' : '₹'}
@@ -443,18 +502,18 @@ const Dashboard = () => {
                              placeholder="0.00"
                              value={formData.amountValue}
                              onChange={handleFormChange}
-                             className="block w-full pl-8 pr-4 py-3 border border-slate-200 rounded-3xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-slate-50 focus:bg-white transition-all shadow-lg"
+                             className="block w-full pl-8 pr-4 py-3 border border-slate-200 rounded-xl sm:rounded-3xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm bg-slate-50 focus:bg-white transition-all shadow-sm"
                            />
                         </div>
                       </div>
                       <div>
-                        <label htmlFor="amountCurrency" className="block text-sm font-semibold text-slate-700 mb-1">Currency</label>
+                        <label htmlFor="amountCurrency" className="block text-sm font-semibold text-slate-700 mb-1.5">Currency</label>
                         <select
                           name="amountCurrency"
                           id="amountCurrency"
                           value={formData.amountCurrency}
                           onChange={handleFormChange}
-                          className="block w-full px-4 py-3 border border-slate-200 rounded-3xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-slate-50 focus:bg-white transition-all shadow-lg"
+                          className="block w-full px-4 py-3 border border-slate-200 rounded-xl sm:rounded-3xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm bg-slate-50 focus:bg-white transition-all shadow-sm"
                         >
                           <option value="USD">USD ($)</option>
                           <option value="EUR">EUR (€)</option>
@@ -465,7 +524,7 @@ const Dashboard = () => {
                     </div>
 
                     <div>
-                      <label htmlFor="expiryDate" className="block text-sm font-semibold text-slate-700 mb-1">Expiry Date</label>
+                      <label htmlFor="expiryDate" className="block text-sm font-semibold text-slate-700 mb-1.5">Expiry Date</label>
                       <input
                         type="date"
                         name="expiryDate"
@@ -473,16 +532,16 @@ const Dashboard = () => {
                         required
                         value={formData.expiryDate}
                         onChange={handleFormChange}
-                        className="block w-full px-4 py-3 border border-slate-200 rounded-3xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-slate-50 focus:bg-white transition-all shadow-lg text-slate-700"
+                        className="block w-full px-4 py-3 border border-slate-200 rounded-xl sm:rounded-3xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm bg-slate-50 focus:bg-white transition-all shadow-sm text-slate-700 min-h-[44px]"
                       />
                     </div>
                   </form>
                 </div>
                 
-                <div className="flex flex-shrink-0 justify-end px-6 py-5 border-t border-slate-100 bg-slate-50 gap-3 z-10 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+                <div className="flex justify-end px-4 sm:px-6 py-4 sm:py-5 border-t border-slate-100 bg-slate-50 gap-3 z-10 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
                   <button
                     type="button"
-                    className="rounded-3xl bg-white px-5 py-2.5 text-sm font-bold text-slate-700 shadow-lg ring-1 ring-inset ring-slate-300 hover:bg-slate-50 transition-all"
+                    className="flex-1 sm:flex-none rounded-xl sm:rounded-3xl bg-white px-4 sm:px-5 py-3 sm:py-2.5 text-sm font-bold text-slate-700 shadow-sm ring-1 ring-inset ring-slate-300 hover:bg-slate-50 transition-all min-h-[44px]"
                     onClick={closeModal}
                   >
                     Cancel
@@ -491,7 +550,7 @@ const Dashboard = () => {
                     onClick={handleFormSubmit}
                     disabled={formLoading}
                     form="product-form"
-                    className="inline-flex justify-center items-center rounded-3xl bg-indigo-600 px-5 py-2.5 text-sm font-bold text-white shadow-lg hover:bg-indigo-700 disabled:opacity-50 transition-all focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                    className="flex-1 sm:flex-none inline-flex justify-center items-center rounded-xl sm:rounded-3xl bg-indigo-600 px-4 sm:px-5 py-3 sm:py-2.5 text-sm font-bold text-white shadow-md hover:bg-indigo-700 disabled:opacity-50 transition-all focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 min-h-[44px]"
                   >
                     {formLoading ? 'Saving...' : (editingProduct ? 'Save Changes' : 'Add Product')}
                   </button>
@@ -506,3 +565,4 @@ const Dashboard = () => {
 };
 
 export default Dashboard;
+

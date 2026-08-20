@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { AlertCircle } from 'lucide-react';
 
 const Register = () => {
   const navigate = useNavigate();
@@ -15,9 +16,6 @@ const Register = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    // No confirm password field in UI, so we skip the check
-
     setIsLoading(true);
     setError('');
 
@@ -32,42 +30,34 @@ const Register = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-slate-50 flex flex-col justify-center py-10 px-4 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
-        <Link to="/" className="text-3xl font-extrabold text-primary inline-block">
+        <Link to="/" className="text-2xl sm:text-3xl font-extrabold text-indigo-600 inline-block">
           Expiry Manager
         </Link>
-        <h2 className="mt-6 text-center text-3xl font-extrabold text-slate-900">
+        <h2 className="mt-4 sm:mt-6 text-center text-2xl sm:text-3xl font-extrabold text-slate-900">
           Create a new account
         </h2>
         <p className="mt-2 text-center text-sm text-slate-600">
           Or{' '}
-          <Link to="/login" className="font-medium text-primary hover:text-opacity-80 transition-colors">
+          <Link to="/login" className="font-medium text-indigo-600 hover:text-indigo-500 transition-colors">
             sign in to your existing account
           </Link>
         </p>
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="premium-card py-8 px-4 sm:px-10">
+        <div className="bg-white py-8 px-6 sm:px-10 shadow-xl shadow-slate-200/50 rounded-3xl border border-slate-100">
           {error && (
-            <div className="mb-4 bg-red-50 border-l-4 border-red-400 p-4 rounded-md">
-              <div className="flex">
-                <div className="flex-shrink-0">
-                  <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                  </svg>
-                </div>
-                <div className="ml-3">
-                  <p className="text-sm text-red-700">{error}</p>
-                </div>
-              </div>
+            <div className="mb-6 p-4 rounded-2xl bg-red-50 text-red-700 text-sm font-medium flex items-start gap-3 border border-red-100">
+              <AlertCircle className="w-5 h-5 shrink-0 text-red-500 mt-0.5" /> 
+              <span className="break-words flex-1">{error}</span>
             </div>
           )}
 
-          <form className="space-y-6" onSubmit={handleSubmit}>
+          <form className="space-y-5" onSubmit={handleSubmit}>
             <div>
-              <label htmlFor="name" className="block text-sm font-medium text-slate-700">
+              <label htmlFor="name" className="block text-sm font-semibold text-slate-700 mb-1.5">
                 Full Name
               </label>
               <div className="mt-1">
@@ -79,13 +69,13 @@ const Register = () => {
                   required
                   value={formData.name}
                   onChange={handleChange}
-                  className="appearance-none block w-full px-3 py-2 border border-slate-300 rounded-md shadow-lg placeholder-slate-400 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm"
+                  className="appearance-none block w-full px-4 py-3 border border-slate-200 rounded-2xl shadow-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm bg-slate-50 focus:bg-white transition-all"
                 />
               </div>
             </div>
 
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-slate-700">
+              <label htmlFor="email" className="block text-sm font-semibold text-slate-700 mb-1.5">
                 Email address
               </label>
               <div className="mt-1">
@@ -97,13 +87,13 @@ const Register = () => {
                   required
                   value={formData.email}
                   onChange={handleChange}
-                  className="appearance-none block w-full px-3 py-2 border border-slate-300 rounded-md shadow-lg placeholder-slate-400 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm"
+                  className="appearance-none block w-full px-4 py-3 border border-slate-200 rounded-2xl shadow-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm bg-slate-50 focus:bg-white transition-all"
                 />
               </div>
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-slate-700">
+              <label htmlFor="password" className="block text-sm font-semibold text-slate-700 mb-1.5">
                 Password
               </label>
               <div className="mt-1">
@@ -115,16 +105,16 @@ const Register = () => {
                   required
                   value={formData.password}
                   onChange={handleChange}
-                  className="appearance-none block w-full px-3 py-2 border border-slate-300 rounded-md shadow-lg placeholder-slate-400 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm"
+                  className="appearance-none block w-full px-4 py-3 border border-slate-200 rounded-2xl shadow-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm bg-slate-50 focus:bg-white transition-all"
                 />
               </div>
             </div>
 
-            <div>
+            <div className="pt-2">
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-lg text-sm font-medium text-white bg-primary hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full flex justify-center py-3 px-4 border border-transparent rounded-2xl shadow-md text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]"
               >
                 {isLoading ? 'Creating account...' : 'Create account'}
               </button>

@@ -8,6 +8,18 @@ const api = axios.create({
   withCredentials: true, // Crucial for sending/receiving HttpOnly cookies
 });
 
+// Interceptor to attach Bearer token to requests
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
 // Interceptor to handle global errors like 401 Unauthorized
 api.interceptors.response.use(
   (response) => response,
